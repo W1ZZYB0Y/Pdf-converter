@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free PDF to Audio Converter | Listen to Your Documents</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .container {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        #drop-area {
+            border: 2px dashed #3498db;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        #drop-area.highlight {
+            background: #e1f0fa;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border-top: 1px solid #eee;
+        }
+        .voice-options {
+            margin: 15px 0;
+        }
+        .adsense-demo {
+            background: #f0f0f0;
+            padding: 15px;
+            text-align: center;
+            margin: 20px 0;
+            border: 1px dashed #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>PDF to Audio Converter</h1>
+    <p style="text-align: center;">Convert your PDF documents to spoken audio for free!</p>
+    
+    <div class="container">
+        <!-- AdSense Slot (Replace with your actual AdSense code) -->
+        <div class="adsense-demo">
+            <p>Google AdSense Banner</p>
+            <small>(Replace this with your actual AdSense code)</small>
+        </div>
+
+        <div id="drop-area">
+            <p>Drag & drop your PDF here, or click to select</p>
+            <input type="file" id="pdfUpload" accept=".pdf" style="display: none;">
+            <button id="selectBtn">Select PDF File</button>
+        </div>
+
+        <div class="voice-options">
+            <label for="voiceSelect">Select Voice:</label>
+            <select id="voiceSelect" style="padding: 5px; margin-left: 10px;"></select>
+        </div>
+
+        <button id="convertBtn" disabled>Convert to Audio</button>
+        <button id="downloadBtn" disabled style="background: #27ae60;">Download as MP3</button>
+
+        <div id="result"></div>
+    </div>
+
+    <!-- AdSense Slot #2 -->
+    <div class="adsense-demo" style="margin-top: 30px;">
+        <p>Google AdSense Footer</p>
+    </div>
+
+    <!-- Required Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/RecordRTC/5.6.2/RecordRTC.min.js"></script>
+    
+    <!-- Main Script -->
+    <script>
+        // Initialize PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+
+        // DOM Elements
+        const pdfUpload = document.getElementById('pdfUpload');
+        const selectBtn = document.getElementById('selectBtn');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const dropArea = document.getElementById('drop-area');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const resultDiv = document.getElementById('result');
+
+        // Audio recording variables
+        let audioChunks = [];
+        let mediaRecorder;
+        let audioBlob;
+        let audioUrl;
+
+        // Set up drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropArea.classList.add('highlight');
+        }
+
+        function unhighlight() {
+            dropArea.classList.remove('highlight');
+        }
+
+        dropArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length && files[0].type === 'application/pdf') {
+                pdfUpload.files = files;
+                handleFiles(files);
+            }
+        }
+
+        selectBtn.addEventListener('click', () => pdfUpload.click());
+
+        pdfUpload.addEventListener('change', function() {
+            if (this.files.length) {
+                handleFiles(this.files);
+            }
+        });
+
+        // Populate voice options
+        function populateVoices() {
+            const voices = window.speechSynthesis.getVoices();
+            voiceSelect.innerHTML = '';
+            voices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                voiceSelect.appendChild(option);
+            });
+        }
+
+        // Run once voices are loaded
+        speechSynthesis.onvoiceschanged = populateVoices;
+        populateVoices(); // In case voices are already loaded
+
+        // Handle selected PDF
+        async function handleFiles(files) {
+            const file = files[0];
+            if (file.type !== 'application/pdf') {
+                resultDiv.innerHTML = '<p style="color: red;">Please upload a PDF file.</p>';
+                return;
+            }
+
+            convertBtn.disabled = false;
+            resultDiv.innerHTML = `<p>File selected: <strong>${file.name}</strong></p>`;
+        }
+
+        // Convert PDF to audio
+        convertBtn.addEventListener('click', async () => {
+            if (!pdfUpload.files.length) return;
+
+            const file = pdfUpload.files[0];
+            resultDiv.innerHTML = '<p>Processing PDF... <span id="progress">0%</span></p>';
+
+            try {
+                // Extract text from PDF
+                const pdfText = await extractTextFromPDF(file);
+                
+                // Prepare for recording
+                audioChunks = [];
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const destination = audioContext.createMediaStreamDestination();
+                mediaRecorder = new MediaRecorder(destination.stream);
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) {
+                        audioChunks.push(e.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                    audioUrl = URL.createObjectURL(audioBlob);
+                    downloadBtn.disabled = false;
+                    resultDiv.innerHTML += '<p>Conversion complete! Click "Download as MP3" to save.</p>';
+                };
+
+                mediaRecorder.start();
+
+                // Speak the text
+                const utterance = new SpeechSynthesisUtterance(pdfText);
+                const selectedVoice = speechSynthesis.getVoices().find(v => v.name === voiceSelect.value);
+                if (selectedVoice) utterance.voice = selectedVoice;
+
+                utterance.onboundary = (event) => {
+                    if (event.name === 'word') {
+                        const progress = Math.min(100, Math.floor(event.charIndex / pdfText.length * 100));
+                        document.getElementById('progress').textContent = `${progress}%`;
+                    }
+                };
+
+                utterance.onend = () => {
+                    mediaRecorder.stop();
+                };
+
+                speechSynthesis.speak(utterance);
+
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                console.error(error);
+            }
+        });
+
+        // Download MP3
+        downloadBtn.addEventListener('click', () => {
+            if (!audioUrl) return;
+            
+            const a = document.createElement('a');
+            a.href = audioUrl;
+            a.download = `converted_${Date.now()}.mp3`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+
+        // PDF text extraction function
+        async function extractTextFromPDF(file) {
+            return new Promise((resolve, reject) => {
+                const fileReader = new FileReader();
+                
+                fileReader.onload = async function() {
+                    try {
+                        const typedArray = new Uint8Array(this.result);
+                        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                        let fullText = '';
+                        
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const textContent = await page.getTextContent();
+                            const textItems = textContent.items.map(item => item.str);
+                            fullText += textItems.join(' ') + '\n';
+                        }
+                        
+                        resolve(fullText);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                fileReader.onerror = reject;
+                fileReader.readAsArrayBuffer(file);
+            });
+        }
+    </script>
+</body>
+</html>
