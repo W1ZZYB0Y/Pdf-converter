@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us | PDF to Audio Converter</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { color: #2c3e50; }
+        form { margin-top: 20px; }
+        label { display: block; margin: 10px 0 5px; }
+        input, textarea { width: 100%; padding: 8px; }
+        button { background: #3498db; color: white; border: none; padding: 10px 20px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Contact Us</h1>
+    
+    <form action="https://formspree.io/f/xrbpjlvp" method="POST" id="contactForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" required>
+        
+        <label for="email">Email:</label>
+        <input type="email" id="email" required>
+        
+        <label for="message">Message:</label>
+        <textarea id="message" rows="5" required></textarea>
+        
+        <button type="submit">Send Message</button>
+    </form>
+
+    <p>Or email us directly: <a href="mailto:udomwisdom466@gmail.com">support@example.com</a></p>
+
+    <p><a href="/Pdf-convert/">← Back to Converter</a></p>
+
+    <script>
+        // Simple form handler (for demo - use Formspree/Netlify Forms in production)
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Message sent! (This is a demo. For real functionality, use Formspree or similar service.)');
+            this.reset();
+        });
+    </script>
+</body>
+</html>
