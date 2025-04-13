@@ -1,45 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Us | PDF to Audio Converter</title>
+    <title>Contact Us</title>
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
-        h1 { color: #2c3e50; }
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
         form { margin-top: 20px; }
-        label { display: block; margin: 10px 0 5px; }
-        input, textarea { width: 100%; padding: 8px; }
-        button { background: #3498db; color: white; border: none; padding: 10px 20px; margin-top: 10px; }
+        label { display: block; margin: 15px 0 5px; }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; }
+        button { background: #3498db; color: white; border: none; padding: 10px 20px; margin-top: 15px; }
     </style>
 </head>
 <body>
     <h1>Contact Us</h1>
     
-    <form action="https://formspree.io/f/xrbpjlvp" method="POST" id="contactForm">
-        <label for="name">Name:</label>
-        <input type="text" id="name" required>
-        
-        <label for="email">Email:</label>
-        <input type="email" id="email" required>
-        
-        <label for="message">Message:</label>
-        <textarea id="message" rows="5" required></textarea>
-        
-        <button type="submit">Send Message</button>
-    </form>
-
-    <p>Or email us directly: <a href="mailto:udomwisdom466@gmail.com">support@example.com</a></p>
-
-    <p><a href="/Pdf-convert/">← Back to Converter</a></p>
-
-    <script>
-        // Simple form handler (for demo - use Formspree/Netlify Forms in production)
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Message sent! (This is a demo. For real functionality, use Formspree or similar service.)');
-            this.reset();
-        });
-    </script>
+   <form action="https://formspree.io/f/xrbpjlvp" method="POST">
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" required>
+  
+   <label for="email">Email:</label>
+   <input type="email" id="email" name="_replyto" required>
+  
+    <label for="message">Message:</label>
+   <textarea id="message" name="message" rows="5" required></textarea>
+  
+  <!-- Honeypot (spam prevention) -->
+    <input type="text" name="_gotcha" style="display:none">
+  
+  <!-- Redirect after submission -->
+    <input type="hidden" name="_next" value="https://w1zzyb0y.github.io/Pdf-convert/thank-you.html">
+  
+    <button type="submit">Send Message</button>
+  </form>
 </body>
 </html>
